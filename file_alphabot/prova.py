@@ -1,4 +1,4 @@
-from AlphaBot import AlphaBot
+from AlphaBotV1 import AlphaBot
 import time
 
 Ab = AlphaBot()

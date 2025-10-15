@@ -3,13 +3,17 @@ import time
 
 class AlphaBot(object):
 	
-	def __init__(self,in1=12,in2=13,ena=6,in3=20,in4=21,enb=26):
+	def __init__(self,in1=12,in2=13,ena=6,in3=20,in4=21,enb=26, ir_left=19, ir_right=16):
 		self.IN1 = in1
 		self.IN2 = in2
 		self.IN3 = in3
 		self.IN4 = in4
 		self.ENA = ena
 		self.ENB = enb
+
+		# Sensori di prossimità
+		self.IR_LEFT = ir_left
+		self.IR_RIGHT = ir_right
 
 		GPIO.setmode(GPIO.BCM)
 		GPIO.setwarnings(False)
@@ -19,17 +23,24 @@ class AlphaBot(object):
 		GPIO.setup(self.IN4,GPIO.OUT)
 		GPIO.setup(self.ENA,GPIO.OUT)
 		GPIO.setup(self.ENB,GPIO.OUT)
-		self.forward()
+		
+		GPIO.setup(self.IR_LEFT, GPIO.IN)
+		GPIO.setup(self.IR_RIGHT, GPIO.IN)
+
+
 		self.PWMA = GPIO.PWM(self.ENA,500)
 		self.PWMB = GPIO.PWM(self.ENB,500)
 		self.PWMA.start(50)
 		self.PWMB.start(50)
 
-	def forward(self):
+	def forward(self, t):
 		GPIO.output(self.IN1,GPIO.HIGH)
 		GPIO.output(self.IN2,GPIO.LOW)
 		GPIO.output(self.IN3,GPIO.LOW)
 		GPIO.output(self.IN4,GPIO.HIGH)
+		
+		time.sleep(t)
+		self.stop
 
 	def stop(self):
 		GPIO.output(self.IN1,GPIO.LOW)
@@ -78,3 +89,10 @@ class AlphaBot(object):
 			GPIO.output(self.IN3,GPIO.LOW)
 			GPIO.output(self.IN4,GPIO.HIGH)
 			self.PWMB.ChangeDutyCycle(0 - left)
+	
+	# Ritorna 0 se trova l'ostacolo
+	def left_sensor(self):
+		return GPIO.input(self.IR_LEFT) == 0
+	
+	def right_sensor(self):
+		return GPIO.input(self.IR_RIGHT) == 0
