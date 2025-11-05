@@ -1,3 +1,4 @@
+# tramite una soket si decide quale forma fare
 from AlphaBotV1 import AlphaBot
 import time
 import socket

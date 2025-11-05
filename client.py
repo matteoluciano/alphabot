@@ -1,3 +1,4 @@
+# client da lanciare dal pc per mandare dati all'alphabot (muoverlo con wasd o mandare forme)
 import socket
 
 def main():

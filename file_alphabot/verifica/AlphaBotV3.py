@@ -1,4 +1,4 @@
-# modifica alla funzione forward (aggiunto parametro tempo)
+# modifica a tutte le funzioni di movimento (a tutti va passato il tempo)
 import RPi.GPIO as GPIO
 import time
 
@@ -42,6 +42,7 @@ class AlphaBot(object):
 		
 		time.sleep(t)
 		self.stop
+		time.sleep(1)
 
 	def stop(self):
 		GPIO.output(self.IN1,GPIO.LOW)
@@ -49,23 +50,37 @@ class AlphaBot(object):
 		GPIO.output(self.IN3,GPIO.LOW)
 		GPIO.output(self.IN4,GPIO.LOW)
 
-	def backward(self):
+	def backward(self, t):
 		GPIO.output(self.IN1,GPIO.LOW)
 		GPIO.output(self.IN2,GPIO.HIGH)
 		GPIO.output(self.IN3,GPIO.HIGH)
 		GPIO.output(self.IN4,GPIO.LOW)
 
-	def left(self):
+		time.sleep(t)
+		self.stop
+		time.sleep(1)
+
+
+	def left(self, t):
 		GPIO.output(self.IN1,GPIO.LOW)
 		GPIO.output(self.IN2,GPIO.HIGH)
 		GPIO.output(self.IN3,GPIO.LOW)
 		GPIO.output(self.IN4,GPIO.HIGH)
 
-	def right(self):
+		time.sleep(t)
+		self.stop
+		time.sleep(1)
+
+
+	def right(self, t):
 		GPIO.output(self.IN1,GPIO.HIGH)
 		GPIO.output(self.IN2,GPIO.LOW)
 		GPIO.output(self.IN3,GPIO.HIGH)
 		GPIO.output(self.IN4,GPIO.LOW)
+
+		time.sleep(t)
+		self.stop
+		time.sleep(1)
 		
 	def setPWMA(self,value):
 		self.PWMA.ChangeDutyCycle(value)

@@ -1,3 +1,4 @@
+# server per far muovere l alfabot con i comandi wasd
 from AlphaBotV1 import AlphaBot
 import time
 import socket
