@@ -41,8 +41,8 @@ class AlphaBot(object):
 		GPIO.output(self.IN4,GPIO.HIGH)
 		
 		time.sleep(t)
-		self.stop
-		time.sleep(0.5)
+		self.stop()
+		time.sleep(1)
 
 	def stop(self):
 		GPIO.output(self.IN1,GPIO.LOW)
@@ -57,8 +57,8 @@ class AlphaBot(object):
 		GPIO.output(self.IN4,GPIO.LOW)
 
 		time.sleep(t)
-		self.stop
-		time.sleep(0.5)
+		self.stop()
+		time.sleep(1)
 
 
 	def left(self, t):
@@ -68,8 +68,8 @@ class AlphaBot(object):
 		GPIO.output(self.IN4,GPIO.HIGH)
 
 		time.sleep(t)
-		self.stop
-		time.sleep(0.5)
+		self.stop()
+		time.sleep(1)
 
 
 	def right(self, t):
@@ -79,8 +79,8 @@ class AlphaBot(object):
 		GPIO.output(self.IN4,GPIO.LOW)
 
 		time.sleep(t)
-		self.stop
-		time.sleep(0.5)
+		self.stop()
+		time.sleep(1)
 		
 	def setPWMA(self,value):
 		self.PWMA.ChangeDutyCycle(value)
