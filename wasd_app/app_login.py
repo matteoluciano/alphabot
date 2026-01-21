@@ -14,7 +14,7 @@ app = Flask(__name__)
 app.secret_key = "super-secret-key"  # OBBLIGATORIA per Flask-Login
 
 login_manager = LoginManager()
-login_manager.init_app(app)
+login_manager.init_app(app) # collega l'app a flask-login
 login_manager.login_view = "login"
 
 DB_PATH = "users.db"
