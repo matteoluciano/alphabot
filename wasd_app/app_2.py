@@ -20,7 +20,6 @@ def index():
             if cmd == 'W':
                 print("Vado avanti")
                 Ab.forward(1)
-            elif cmd == 'A':
                 print("Vado a sinistra")
                 Ab.left(0.28)
             elif cmd == 'S':
@@ -34,4 +33,4 @@ def index():
     return render_template("index.html")
 
 if __name__ == '__main__':
-     app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
+    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
