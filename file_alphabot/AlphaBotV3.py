@@ -114,9 +114,9 @@ class AlphaBot(object):
 		return GPIO.input(self.IR_RIGHT) == 0
 	
 	def cerchio(self):
-		for i in range():
+		for i in range(16):
 			self.forward(0.6)
-			self.left(0.1)
+			self.left(0.2)
 	
 	def quadrato(self):
 		self.forward(2)
