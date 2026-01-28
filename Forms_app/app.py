@@ -161,7 +161,7 @@ def index():
         if cmd in VALID_COMMANDS:
             save_command(current_user.id, current_user.username, cmd)
             flash(f"Comando '{cmd}' salvato! Il robot lo eseguirà a breve.", "success")
-            print(f"✅ [{current_user.username}] Comando salvato: {cmd}")
+            print(f"[{current_user.username}] Comando salvato: {cmd}")
         else:
             flash("Comando non valido!", "error")
 
