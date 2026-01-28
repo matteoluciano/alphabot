@@ -1,5 +1,5 @@
 import sqlite3
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session
 from flask_login import LoginManager, UserMixin,login_user, login_required,logout_user, current_user
 from AlphaBotV3 import AlphaBot
 
@@ -52,9 +52,14 @@ def get_user_by_id(user_id):
 def load_user(user_id):
     return get_user_by_id(user_id)
 
+@app.route("/")
+def index():
+    return redirect(url_for("login"))
+
 # login
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    session.clear()
     if request.method == "POST":
         username = request.form.get("user")
         password = request.form.get("password")
@@ -62,8 +67,8 @@ def login():
         user = get_user_by_username(username)
 
         if user and user.password == password:
-            login_user(user)
-            return redirect(url_for("index"))
+            login_user(user, remember=False)
+            return redirect(url_for("commands"))
 
         return "Login fallito", 401
 
@@ -77,9 +82,9 @@ def logout():
     return redirect(url_for("login"))
 
 # controlli (accessisibile solo con login)
-@app.route("/", methods=["GET", "POST"])
+@app.route("/commands", methods=["GET", "POST"])
 @login_required
-def index():
+def commands():
     if request.method == "POST":
         cmd = request.form.get("cmd")
 
@@ -95,7 +100,7 @@ def index():
             elif cmd == 'D':
                 Ab.right(0.28)
 
-    return render_template("index.html")
+    return render_template("commands.html")
 
 
 if __name__ == '__main__':
