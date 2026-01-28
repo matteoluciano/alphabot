@@ -112,3 +112,24 @@ class AlphaBot(object):
 	
 	def right_sensor(self):
 		return GPIO.input(self.IR_RIGHT) == 0
+	
+	def cerchio(self):
+		for i in range():
+			self.forward(0.6)
+			self.left(0.1)
+	
+	def quadrato(self):
+		self.forward(2)
+		self.left(0.28)
+		self.forward(2)
+		self.left(0.28)
+		self.forward(2)
+		self.left(0.28)
+		self.forward(2)
+	
+	def triangolo(self):
+		self.forward(2)
+		self.left(0.42)
+		self.forward(2)
+		self.left(0.42)
+		self.forward(2)

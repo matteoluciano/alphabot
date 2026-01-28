@@ -1,48 +1,36 @@
 import sqlite3
-from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_login import (
-    LoginManager,
-    UserMixin,
-    login_user,
-    login_required,
-    logout_user,
-    current_user
-)
+from flask import Flask, render_template, request, redirect, url_for, session
+from flask_login import LoginManager, UserMixin,login_user, login_required,logout_user, current_user
+from AlphaBotV3 import AlphaBot
 
-# =========================
-# FLASK APP
-# =========================
+# alphabot
+Ab = AlphaBot()
+Ab.stop()
+Ab.setPWMA(33)
+Ab.setPWMB(33)
+
+# flask
 app = Flask(__name__)
-app.secret_key = "super-secret-key"
+app.secret_key = "super-secret-key"  # OBBLIGATORIA per Flask-Login
 
 login_manager = LoginManager()
-login_manager.init_app(app)
+login_manager.init_app(app) # collega l'app a flask-login
 login_manager.login_view = "login"
 
-DB_USERS = "users.db"
-DB_COMMANDS = "commands.db"
+DB_PATH = "users.db"
 
-VALID_COMMANDS = ["circle", "square", "triangle"]
-
-# =========================
-# USER MODEL
-# =========================
+# classe user
 class User(UserMixin):
     def __init__(self, id, username, password):
         self.id = id
         self.username = username
         self.password = password
 
-# =========================
-# DATABASE FUNCTIONS - USERS
-# =========================
+# query
 def get_user_by_username(username):
-    conn = sqlite3.connect(DB_USERS)
+    conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
-    cur.execute(
-        "SELECT id, username, password FROM users WHERE username = ?",
-        (username,)
-    )
+    cur.execute("SELECT id, username, password FROM users WHERE username = ?", (username,))
     row = cur.fetchone()
     conn.close()
     if row:
@@ -50,79 +38,28 @@ def get_user_by_username(username):
     return None
 
 def get_user_by_id(user_id):
-    conn = sqlite3.connect(DB_USERS)
+    conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
-    cur.execute(
-        "SELECT id, username, password FROM users WHERE id = ?",
-        (user_id,)
-    )
+    cur.execute("SELECT id, username, password FROM users WHERE id = ?", (user_id,))
     row = cur.fetchone()
     conn.close()
     if row:
         return User(*row)
     return None
 
-def create_user(username, password):
-    try:
-        conn = sqlite3.connect(DB_USERS)
-        cur = conn.cursor()
-        cur.execute(
-            "INSERT INTO users (username, password) VALUES (?, ?)",
-            (username, password)
-        )
-        conn.commit()
-        conn.close()
-        return True
-    except sqlite3.IntegrityError:
-        return False
-
-# =========================
-# DATABASE FUNCTIONS - COMMANDS
-# =========================
-def save_command(user_id, username, command):
-    conn = sqlite3.connect(DB_COMMANDS)
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO commands (user_id, username, command) VALUES (?, ?, ?)",
-        (user_id, username, command)
-    )
-    conn.commit()
-    conn.close()
-
-# =========================
-# FLASK-LOGIN LOADER
-# =========================
+# login loader
 @login_manager.user_loader
 def load_user(user_id):
     return get_user_by_id(user_id)
 
-# =========================
-# REGISTER
-# =========================
-@app.route("/register", methods=["GET", "POST"])
-def register():
-    if request.method == "POST":
-        username = request.form.get("user")
-        password = request.form.get("password")
+@app.route("/")
+def index():
+    return redirect(url_for("login"))
 
-        if not username or not password:
-            flash("Username e password obbligatori!", "error")
-            return redirect(url_for("register"))
-
-        if create_user(username, password):
-            flash("Registrazione completata! Effettua il login.", "success")
-            return redirect(url_for("login"))
-        else:
-            flash("Username già esistente!", "error")
-            return redirect(url_for("register"))
-
-    return render_template("register.html")
-
-# =========================
-# LOGIN
-# =========================
+# login
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    session.clear()
     if request.method == "POST":
         username = request.form.get("user")
         password = request.form.get("password")
@@ -130,47 +67,47 @@ def login():
         user = get_user_by_username(username)
 
         if user and user.password == password:
-            login_user(user)
-            flash(f"Benvenuto, {username}!", "success")
-            return redirect(url_for("index"))
+            login_user(user, remember=False)
+            return redirect(url_for("commands"))
 
-        flash("Credenziali errate!", "error")
-        return redirect(url_for("login"))
+        return "Login fallito", 401
 
     return render_template("login.html")
 
-# =========================
-# LOGOUT
-# =========================
+# logout
 @app.route("/logout")
 @login_required
 def logout():
     logout_user()
-    flash("Logout effettuato!", "info")
     return redirect(url_for("login"))
 
-# =========================
-# MAIN PAGE (PROTETTA)
-# =========================
-@app.route("/", methods=["GET", "POST"])
+# controlli (accessisibile solo con login)
+@app.route("/commands", methods=["GET", "POST"])
 @login_required
-def index():
+def commands():
     if request.method == "POST":
         cmd = request.form.get("cmd")
 
-        if cmd in VALID_COMMANDS:
-            save_command(current_user.id, current_user.username, cmd)
-            flash(f"Comando '{cmd}' salvato! Il robot lo eseguirà a breve.", "success")
-            print(f"[{current_user.username}] Comando salvato: {cmd}")
-        else:
-            flash("Comando non valido!", "error")
+        if cmd:
+            print(f"[{current_user.username}] Comando:", cmd)
 
-        return redirect(url_for("index"))
+            if cmd == 'W':
+                Ab.forward(1)
+            elif cmd == 'A':
+                Ab.left(0.28)
+            elif cmd == 'S':
+                Ab.backward(1)
+            elif cmd == 'D':
+                Ab.right(0.28)
+            elif cmd == 'triangolo':
+                Ab.triangolo()
+            elif cmd == 'quadrato':
+                Ab.quadrato()
+            elif cmd == 'cerchio':
+                Ab.cerchio()
 
-    return render_template("index.html")
+    return render_template("commands.html")
 
-# =========================
-# START SERVER
-# =========================
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
