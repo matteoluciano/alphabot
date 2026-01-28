@@ -37,4 +37,4 @@ CREATE TABLE IF NOT EXISTS commands (
 conn_commands.commit()
 conn_commands.close()
 
-print("✅ Database inizializzati correttamente!")
+print("Database inizializzati correttamente!")
