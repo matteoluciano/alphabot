@@ -2,6 +2,7 @@ import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_login import LoginManager, UserMixin,login_user, login_required,logout_user, current_user
 from AlphaBotV3 import AlphaBot
+import threading
 
 # alphabot
 Ab = AlphaBot()
@@ -47,6 +48,14 @@ def get_user_by_id(user_id):
         return User(*row)
     return None
 
+def controllo_sensori():
+    left = Ab.left_sensor()
+    right = Ab.right_sensor()
+    print("dati sensori:", left, right)
+    if left == 0 or right == 0:
+        print("Rilevato sensore")
+        Ab.stop()
+
 # login loader
 @login_manager.user_loader
 def load_user(user_id):
@@ -85,6 +94,7 @@ def logout():
 @app.route("/commands", methods=["GET", "POST"])
 @login_required
 def commands():
+
     if request.method == "POST":
         cmd = request.form.get("cmd")
 
@@ -110,4 +120,6 @@ def commands():
 
 
 if __name__ == '__main__':
+    t = threading.Thread(target=controllo_sensori, daemon=True)
+    t.start()
     app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
