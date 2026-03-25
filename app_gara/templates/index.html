@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlphaBot Controller</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #1a1a2e;
+            font-family: Arial, sans-serif;
+        }
+        .controller {
+            display: grid;
+            grid-template-areas:
+                ".    up   ."
+                "left stop right"
+                ".    down .";
+            gap: 10px;
+        }
+        .btn {
+            width: 80px;
+            height: 80px;
+            font-size: 28px;
+            border: none;
+            border-radius: 12px;
+            background: #16213e;
+            color: #e0e0e0;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            transition: background 0.1s, transform 0.1s;
+        }
+        .btn:active, .btn.pressed {
+            background: #0f3460;
+            transform: scale(0.93);
+        }
+        .btn-up    { grid-area: up; }
+        .btn-left  { grid-area: left; }
+        .btn-stop  { grid-area: stop; background: #c0392b; }
+        .btn-right { grid-area: right; }
+        .btn-down  { grid-area: down; }
+    </style>
+</head>
+<body>
+    <div class="controller">
+        <button class="btn btn-up"    data-cmd="W">▲</button>
+        <button class="btn btn-left"  data-cmd="A">◀</button>
+        <button class="btn btn-stop"  data-cmd="STOP_MANUAL">■</button>
+        <button class="btn btn-right" data-cmd="D">▶</button>
+        <button class="btn btn-down"  data-cmd="S">▼</button>
+    </div>
+
+    <script>
+        function sendCmd(cmd) {
+            fetch('/cmd', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cmd: cmd })
+            });
+        }
+
+        document.querySelectorAll('.btn[data-cmd]').forEach(btn => {
+            const cmd = btn.dataset.cmd;
+
+            // Mouse
+            btn.addEventListener('mousedown', () => {
+                if (cmd === 'STOP_MANUAL') { sendCmd('STOP'); return; }
+                sendCmd('START_' + cmd);
+            });
+            btn.addEventListener('mouseup',   () => { if (cmd !== 'STOP_MANUAL') sendCmd('STOP'); });
+            btn.addEventListener('mouseleave', () => { if (cmd !== 'STOP_MANUAL') sendCmd('STOP'); });
+
+            // Touch (mobile)
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (cmd === 'STOP_MANUAL') { sendCmd('STOP'); return; }
+                sendCmd('START_' + cmd);
+            });
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                if (cmd !== 'STOP_MANUAL') sendCmd('STOP');
+            });
+        });
+    </script>
+</body>
+</html>
