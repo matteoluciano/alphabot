@@ -13,12 +13,20 @@ move_thread = None
 
 def run_command(cmd):
     if cmd == 'START_W':
+        Ab.setPWMA(50)
+        Ab.setPWMB(50)
         Ab.forward(9999)
     elif cmd == 'START_S':
+        Ab.setPWMA(50)
+        Ab.setPWMB(50)
         Ab.backward(9999)
     elif cmd == 'START_A':
+        Ab.setPWMA(31)
+        Ab.setPWMB(31)
         Ab.left(9999)
     elif cmd == 'START_D':
+        Ab.setPWMA(31)
+        Ab.setPWMB(31)
         Ab.right(9999)
 
 @app.route("/", methods=["GET"])
