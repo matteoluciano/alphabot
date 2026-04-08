@@ -102,6 +102,105 @@
             text-align: right;
             margin: 8px 0 0;
         }
+
+        /* ── Parcheggio ── */
+        .parking-panel {
+            width: 260px;
+            background: #16213e;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 14px 18px;
+        }
+        .parking-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #888;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin: 0 0 12px;
+        }
+        .parking-counter-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .parking-number {
+            font-size: 48px;
+            font-weight: 700;
+            line-height: 1;
+            transition: color 0.3s;
+        }
+        .parking-number.full   { color: #e74c3c; }
+        .parking-number.low    { color: #f39c12; }
+        .parking-number.normal { color: #4caf50; }
+        .parking-label-col {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+        .parking-total {
+            font-size: 12px;
+            color: #666;
+        }
+        .parking-status-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 99px;
+        }
+        .status-ok      { background: #1b3a1f; color: #4caf50; }
+        .status-low     { background: #3a2f0e; color: #f39c12; }
+        .status-full    { background: #3a0e0e; color: #e74c3c; }
+
+        /* barra progresso */
+        .parking-bar-bg {
+            width: 100%;
+            height: 6px;
+            background: #0f1a30;
+            border-radius: 99px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        .parking-bar-fill {
+            height: 100%;
+            border-radius: 99px;
+            transition: width 0.4s ease, background 0.3s;
+        }
+
+        /* log eventi */
+        .parking-log {
+            border-top: 1px solid rgba(255,255,255,0.06);
+            padding-top: 8px;
+            max-height: 72px;
+            overflow-y: auto;
+        }
+        .parking-log-entry {
+            font-size: 11px;
+            color: #555;
+            padding: 2px 0;
+            display: flex;
+            gap: 6px;
+        }
+        .log-time  { color: #444; flex-shrink: 0; }
+        .log-enter { color: #e74c3c; }
+        .log-exit  { color: #4caf50; }
+
+        /* pulsante reset */
+        .parking-reset-btn {
+            margin-top: 10px;
+            width: 100%;
+            padding: 6px 0;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px;
+            color: #666;
+            font-size: 11px;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+        .parking-reset-btn:hover { background: rgba(255,255,255,0.05); color: #aaa; }
     </style>
 </head>
 <body>
@@ -113,6 +212,7 @@
         <button class="btn btn-down"  data-cmd="S">▼</button>
     </div>
 
+    <!-- Sensori IR -->
     <div class="sensor-panel">
         <p class="sensor-title">Sensori IR</p>
         <div class="sensor-row">
@@ -128,6 +228,27 @@
             <span class="sensor-badge" id="badge-dx">--</span>
         </div>
         <p class="sensor-meta" id="sensor-ts">in attesa...</p>
+    </div>
+
+    <!-- Parcheggio -->
+    <div class="parking-panel">
+        <p class="parking-title">Parcheggi disponibili</p>
+
+        <div class="parking-counter-row">
+            <span class="parking-number normal" id="parking-count">100</span>
+            <div class="parking-label-col">
+                <span class="parking-total">su 100 posti</span>
+                <span class="parking-status-badge status-ok" id="parking-status">Libero</span>
+            </div>
+        </div>
+
+        <div class="parking-bar-bg">
+            <div class="parking-bar-fill" id="parking-bar" style="width:100%; background:#4caf50;"></div>
+        </div>
+
+        <div class="parking-log" id="parking-log"></div>
+
+        <button class="parking-reset-btn" id="parking-reset">↺ Reset contatore</button>
     </div>
 
     <script>
@@ -149,6 +270,48 @@
             btn.addEventListener('touchend',   e => { e.preventDefault(); if (cmd !== 'STOP_MANUAL') sendCmd('STOP'); });
         });
 
+        /* ── Parcheggio ── */
+        const TOTAL = 100;
+        let parkingCount = TOTAL;
+
+        /* stati precedenti dei sensori (null = non ancora letto) */
+        let prevSx = null;
+        let prevDx = null;
+
+        function addLog(type, count) {
+            const log = document.getElementById('parking-log');
+            const now = new Date().toLocaleTimeString('it-IT');
+            const entry = document.createElement('div');
+            entry.className = 'parking-log-entry';
+            entry.innerHTML = type === 'enter'
+                ? `<span class="log-time">${now}</span><span class="log-enter">▼ Entrata — rimasti ${count}</span>`
+                : `<span class="log-time">${now}</span><span class="log-exit">▲ Uscita — rimasti ${count}</span>`;
+            log.prepend(entry);
+            /* mantieni max 10 voci */
+            while (log.children.length > 10) log.removeChild(log.lastChild);
+        }
+
+        function updateParkingUI() {
+            const count = parkingCount;
+            const pct   = (count / TOTAL) * 100;
+
+            /* numero */
+            const numEl = document.getElementById('parking-count');
+            numEl.textContent = count;
+            numEl.className = 'parking-number ' + (count === 0 ? 'full' : count <= 10 ? 'low' : 'normal');
+
+            /* barra */
+            const bar = document.getElementById('parking-bar');
+            bar.style.width = pct + '%';
+            bar.style.background = count === 0 ? '#e74c3c' : count <= 10 ? '#f39c12' : '#4caf50';
+
+            /* badge stato */
+            const sb = document.getElementById('parking-status');
+            if (count === 0) { sb.textContent = 'Completo'; sb.className = 'parking-status-badge status-full'; }
+            else if (count <= 10) { sb.textContent = 'Quasi pieno'; sb.className = 'parking-status-badge status-low'; }
+            else { sb.textContent = 'Libero'; sb.className = 'parking-status-badge status-ok'; }
+        }
+
         /* ── Polling sensori ── */
         function setBadge(id, dotId, value) {
             const on = Boolean(value);
@@ -160,10 +323,31 @@
 
         async function pollSensori() {
             try {
-                const res = await fetch('/api/sensori');
+                const res  = await fetch('/api/sensori');
                 const data = await res.json();
-                setBadge('badge-sx', 'dot-sx', data.sensore_sinistro);
-                setBadge('badge-dx', 'dot-dx', data.sensore_destro);
+
+                const curSx = Boolean(data.sensore_sinistro);
+                const curDx = Boolean(data.sensore_destro);
+
+                /* rileva fronti di salita (OFF → ON) */
+                if (prevSx === false && curSx === true) {
+                    /* sensore SINISTRO attivato → uscita → posto liberato */
+                    parkingCount = Math.min(TOTAL, parkingCount + 1);
+                    addLog('exit', parkingCount);
+                    updateParkingUI();
+                }
+                if (prevDx === false && curDx === true) {
+                    /* sensore DESTRO attivato → entrata → posto occupato */
+                    parkingCount = Math.max(0, parkingCount - 1);
+                    addLog('enter', parkingCount);
+                    updateParkingUI();
+                }
+
+                prevSx = curSx;
+                prevDx = curDx;
+
+                setBadge('badge-sx', 'dot-sx', curSx);
+                setBadge('badge-dx', 'dot-dx', curDx);
                 document.getElementById('sensor-ts').textContent =
                     'aggiornato alle ' + new Date().toLocaleTimeString('it-IT');
             } catch {
@@ -171,6 +355,16 @@
             }
         }
 
+        /* reset manuale */
+        document.getElementById('parking-reset').addEventListener('click', () => {
+            parkingCount = TOTAL;
+            prevSx = null;
+            prevDx = null;
+            document.getElementById('parking-log').innerHTML = '';
+            updateParkingUI();
+        });
+
+        updateParkingUI();
         pollSensori();
         setInterval(pollSensori, 500);
     </script>
