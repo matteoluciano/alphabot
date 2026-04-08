@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlphaBot Controller</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            gap: 24px;
+            margin: 0;
+            background: #1a1a2e;
+            font-family: Arial, sans-serif;
+        }
+        .controller {
+            display: grid;
+            grid-template-areas:
+                ".    up   ."
+                "left stop right"
+                ".    down .";
+            gap: 10px;
+        }
+        .btn {
+            width: 80px;
+            height: 80px;
+            font-size: 28px;
+            border: none;
+            border-radius: 12px;
+            background: #16213e;
+            color: #e0e0e0;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            transition: background 0.1s, transform 0.1s;
+        }
+        .btn:active, .btn.pressed {
+            background: #0f3460;
+            transform: scale(0.93);
+        }
+        .btn-up    { grid-area: up; }
+        .btn-left  { grid-area: left; }
+        .btn-stop  { grid-area: stop; background: #c0392b; }
+        .btn-right { grid-area: right; }
+        .btn-down  { grid-area: down; }
+
+        /* ── Sensori ── */
+        .sensor-panel {
+            width: 260px;
+            background: #16213e;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 14px 18px;
+        }
+        .sensor-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #888;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin: 0 0 10px;
+        }
+        .sensor-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .sensor-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #ccc;
+        }
+        .sensor-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        .dot-on  { background: #4caf50; box-shadow: 0 0 6px #4caf5088; }
+        .dot-off { background: #555; }
+        .sensor-badge {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 99px;
+            transition: background 0.2s, color 0.2s;
+        }
+        .badge-on  { background: #1b3a1f; color: #4caf50; }
+        .badge-off { background: #2a2a2a; color: #666; }
+        .sensor-meta {
+            font-size: 11px;
+            color: #555;
+            text-align: right;
+            margin: 8px 0 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="controller">
+        <button class="btn btn-up"    data-cmd="W">▲</button>
+        <button class="btn btn-left"  data-cmd="A">◀</button>
+        <button class="btn btn-stop"  data-cmd="STOP_MANUAL">■</button>
+        <button class="btn btn-right" data-cmd="D">▶</button>
+        <button class="btn btn-down"  data-cmd="S">▼</button>
+    </div>
+
+    <div class="sensor-panel">
+        <p class="sensor-title">Sensori IR</p>
+        <div class="sensor-row">
+            <span class="sensor-label">
+                <span class="sensor-dot" id="dot-sx"></span>Sinistro
+            </span>
+            <span class="sensor-badge" id="badge-sx">--</span>
+        </div>
+        <div class="sensor-row">
+            <span class="sensor-label">
+                <span class="sensor-dot" id="dot-dx"></span>Destro
+            </span>
+            <span class="sensor-badge" id="badge-dx">--</span>
+        </div>
+        <p class="sensor-meta" id="sensor-ts">in attesa...</p>
+    </div>
+
+    <script>
+        /* ── Controllo motori ── */
+        function sendCmd(cmd) {
+            fetch('/cmd', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cmd: cmd })
+            });
+        }
+
+        document.querySelectorAll('.btn[data-cmd]').forEach(btn => {
+            const cmd = btn.dataset.cmd;
+            btn.addEventListener('mousedown',  () => { cmd === 'STOP_MANUAL' ? sendCmd('STOP') : sendCmd('START_' + cmd); });
+            btn.addEventListener('mouseup',    () => { if (cmd !== 'STOP_MANUAL') sendCmd('STOP'); });
+            btn.addEventListener('mouseleave', () => { if (cmd !== 'STOP_MANUAL') sendCmd('STOP'); });
+            btn.addEventListener('touchstart', e => { e.preventDefault(); cmd === 'STOP_MANUAL' ? sendCmd('STOP') : sendCmd('START_' + cmd); });
+            btn.addEventListener('touchend',   e => { e.preventDefault(); if (cmd !== 'STOP_MANUAL') sendCmd('STOP'); });
+        });
+
+        /* ── Polling sensori ── */
+        function setBadge(id, dotId, value) {
+            const on = Boolean(value);
+            document.getElementById(dotId).className = 'sensor-dot ' + (on ? 'dot-on' : 'dot-off');
+            const badge = document.getElementById(id);
+            badge.className = 'sensor-badge ' + (on ? 'badge-on' : 'badge-off');
+            badge.textContent = on ? 'ON' : 'OFF';
+        }
+
+        async function pollSensori() {
+            try {
+                const res = await fetch('/api/sensori');
+                const data = await res.json();
+                setBadge('badge-sx', 'dot-sx', data.sensore_sinistro);
+                setBadge('badge-dx', 'dot-dx', data.sensore_destro);
+                document.getElementById('sensor-ts').textContent =
+                    'aggiornato alle ' + new Date().toLocaleTimeString('it-IT');
+            } catch {
+                document.getElementById('sensor-ts').textContent = 'errore lettura sensori';
+            }
+        }
+
+        pollSensori();
+        setInterval(pollSensori, 500);
+    </script>
+</body>
+</html>
