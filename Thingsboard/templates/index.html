@@ -1,372 +1,424 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AlphaBot Controller</title>
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            gap: 24px;
-            margin: 0;
-            background: #1a1a2e;
-            font-family: Arial, sans-serif;
-        }
-        .controller {
-            display: grid;
-            grid-template-areas:
-                ".    up   ."
-                "left stop right"
-                ".    down .";
-            gap: 10px;
-        }
-        .btn {
-            width: 80px;
-            height: 80px;
-            font-size: 28px;
-            border: none;
-            border-radius: 12px;
-            background: #16213e;
-            color: #e0e0e0;
-            cursor: pointer;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: none;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-            transition: background 0.1s, transform 0.1s;
-        }
-        .btn:active, .btn.pressed {
-            background: #0f3460;
-            transform: scale(0.93);
-        }
-        .btn-up    { grid-area: up; }
-        .btn-left  { grid-area: left; }
-        .btn-stop  { grid-area: stop; background: #c0392b; }
-        .btn-right { grid-area: right; }
-        .btn-down  { grid-area: down; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaBot — ThingsBoard Widget</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #090d14;
+    --surface:  #0e1624;
+    --card:     #111d2e;
+    --border:   rgba(0,180,255,0.15);
+    --accent:   #00b4ff;
+    --accent2:  #00ffb0;
+    --danger:   #ff3d3d;
+    --warn:     #ffb300;
+    --text:     #c8dff0;
+    --muted:    #3d5a72;
+    --font-ui:  'Exo 2', sans-serif;
+    --font-mono:'Share Tech Mono', monospace;
+    --glow:     0 0 12px rgba(0,180,255,0.45);
+  }
 
-        /* ── Sensori ── */
-        .sensor-panel {
-            width: 260px;
-            background: #16213e;
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 14px;
-            padding: 14px 18px;
-        }
-        .sensor-title {
-            font-size: 11px;
-            font-weight: 600;
-            color: #888;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            margin: 0 0 10px;
-        }
-        .sensor-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-top: 1px solid rgba(255,255,255,0.06);
-        }
-        .sensor-label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            color: #ccc;
-        }
-        .sensor-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            transition: background 0.2s;
-        }
-        .dot-on  { background: #4caf50; box-shadow: 0 0 6px #4caf5088; }
-        .dot-off { background: #555; }
-        .sensor-badge {
-            font-size: 12px;
-            font-weight: 600;
-            padding: 3px 10px;
-            border-radius: 99px;
-            transition: background 0.2s, color 0.2s;
-        }
-        .badge-on  { background: #1b3a1f; color: #4caf50; }
-        .badge-off { background: #2a2a2a; color: #666; }
-        .sensor-meta {
-            font-size: 11px;
-            color: #555;
-            text-align: right;
-            margin: 8px 0 0;
-        }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* ── Parcheggio ── */
-        .parking-panel {
-            width: 260px;
-            background: #16213e;
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 14px;
-            padding: 14px 18px;
-        }
-        .parking-title {
-            font-size: 11px;
-            font-weight: 600;
-            color: #888;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            margin: 0 0 12px;
-        }
-        .parking-counter-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-        }
-        .parking-number {
-            font-size: 48px;
-            font-weight: 700;
-            line-height: 1;
-            transition: color 0.3s;
-        }
-        .parking-number.full   { color: #e74c3c; }
-        .parking-number.low    { color: #f39c12; }
-        .parking-number.normal { color: #4caf50; }
-        .parking-label-col {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 4px;
-        }
-        .parking-total {
-            font-size: 12px;
-            color: #666;
-        }
-        .parking-status-badge {
-            font-size: 11px;
-            font-weight: 600;
-            padding: 3px 10px;
-            border-radius: 99px;
-        }
-        .status-ok      { background: #1b3a1f; color: #4caf50; }
-        .status-low     { background: #3a2f0e; color: #f39c12; }
-        .status-full    { background: #3a0e0e; color: #e74c3c; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 14px;
+    padding: 16px;
+  }
 
-        /* barra progresso */
-        .parking-bar-bg {
-            width: 100%;
-            height: 6px;
-            background: #0f1a30;
-            border-radius: 99px;
-            overflow: hidden;
-            margin-bottom: 10px;
-        }
-        .parking-bar-fill {
-            height: 100%;
-            border-radius: 99px;
-            transition: width 0.4s ease, background 0.3s;
-        }
+  /* ── Header ── */
+  .header {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+  }
+  .header-title {
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    text-shadow: var(--glow);
+  }
+  .header-title span { color: var(--accent2); }
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    border-radius: 99px;
+  }
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent2);
+    box-shadow: 0 0 8px var(--accent2);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0.3; }
+  }
 
-        /* log eventi */
-        .parking-log {
-            border-top: 1px solid rgba(255,255,255,0.06);
-            padding-top: 8px;
-            max-height: 72px;
-            overflow-y: auto;
-        }
-        .parking-log-entry {
-            font-size: 11px;
-            color: #555;
-            padding: 2px 0;
-            display: flex;
-            gap: 6px;
-        }
-        .log-time  { color: #444; flex-shrink: 0; }
-        .log-enter { color: #e74c3c; }
-        .log-exit  { color: #4caf50; }
+  /* ── Camera ── */
+  .camera-card {
+    grid-column: 1 / -1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+  }
+  .camera-card img {
+    width: 100%;
+    display: block;
+    aspect-ratio: 4/3;
+    object-fit: cover;
+    background: #000;
+  }
+  .camera-overlay {
+    position: absolute;
+    top: 8px; left: 8px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent2);
+    background: rgba(0,0,0,0.55);
+    padding: 3px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.06em;
+  }
+  .camera-overlay.rec::before {
+    content: "● ";
+    color: var(--danger);
+    animation: pulse 1s infinite;
+  }
 
-        /* pulsante reset */
-        .parking-reset-btn {
-            margin-top: 10px;
-            width: 100%;
-            padding: 6px 0;
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 8px;
-            color: #666;
-            font-size: 11px;
-            cursor: pointer;
-            transition: background 0.15s, color 0.15s;
-        }
-        .parking-reset-btn:hover { background: rgba(255,255,255,0.05); color: #aaa; }
-    </style>
+  /* ── Sensori ── */
+  .sensor-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+  }
+  .card-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .sensor-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 0;
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+  .sensor-name {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px;
+  }
+  .ir-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+  .ir-dot.active {
+    background: var(--accent2);
+    box-shadow: 0 0 8px var(--accent2);
+  }
+  .sensor-val {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 99px;
+    background: rgba(255,255,255,0.05);
+    color: var(--muted);
+    transition: background 0.2s, color 0.2s;
+  }
+  .sensor-val.on { background: rgba(0,255,176,0.1); color: var(--accent2); }
+  .sensor-ts {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 10px;
+  }
+
+  /* ── Controller ── */
+  .controller-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .dpad {
+    display: grid;
+    grid-template-areas:
+      ".    fwd  ."
+      "lft  stp  rgt"
+      ".    bwd  .";
+    gap: 8px;
+  }
+  .dpad-btn {
+    width: 64px; height: 64px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--accent);
+    font-size: 22px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.1s, transform 0.1s, box-shadow 0.1s;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  .dpad-btn:active, .dpad-btn.pressed {
+    background: rgba(0,180,255,0.12);
+    box-shadow: var(--glow);
+    transform: scale(0.91);
+  }
+  .btn-fwd { grid-area: fwd; }
+  .btn-lft { grid-area: lft; }
+  .btn-stp { grid-area: stp; background: rgba(255,61,61,0.08); color: var(--danger); border-color: rgba(255,61,61,0.25); }
+  .btn-rgt { grid-area: rgt; }
+  .btn-bwd { grid-area: bwd; }
+
+  /* Slider velocità */
+  .speed-row {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+  }
+  .speed-row input[type=range] {
+    flex: 1;
+    accent-color: var(--accent);
+    height: 4px;
+  }
+  #speed-val { color: var(--accent); min-width: 30px; text-align: right; }
+
+  /* Figure */
+  .figures-row {
+    width: 100%;
+    display: flex;
+    gap: 6px;
+  }
+  .fig-btn {
+    flex: 1;
+    padding: 7px 0;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    transition: background 0.15s, color 0.15s;
+  }
+  .fig-btn:hover { background: rgba(0,180,255,0.08); color: var(--accent); }
+
+  /* ── Log ── */
+  .log-card {
+    grid-column: 1 / -1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    max-height: 130px;
+    overflow-y: auto;
+  }
+  .log-entry {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    padding: 3px 0;
+    border-top: 1px solid rgba(255,255,255,0.03);
+    display: flex;
+    gap: 10px;
+  }
+  .log-time { color: #2a4055; }
+  .log-cmd  { color: var(--accent); }
+  .log-rpc  { color: var(--accent2); }
+  .log-err  { color: var(--danger); }
+</style>
 </head>
 <body>
-    <div class="controller">
-        <button class="btn btn-up"    data-cmd="W">▲</button>
-        <button class="btn btn-left"  data-cmd="A">◀</button>
-        <button class="btn btn-stop"  data-cmd="STOP_MANUAL">■</button>
-        <button class="btn btn-right" data-cmd="D">▶</button>
-        <button class="btn btn-down"  data-cmd="S">▼</button>
-    </div>
 
-    <!-- Sensori IR -->
-    <div class="sensor-panel">
-        <p class="sensor-title">Sensori IR</p>
-        <div class="sensor-row">
-            <span class="sensor-label">
-                <span class="sensor-dot" id="dot-sx"></span>Sinistro
-            </span>
-            <span class="sensor-badge" id="badge-sx">--</span>
-        </div>
-        <div class="sensor-row">
-            <span class="sensor-label">
-                <span class="sensor-dot" id="dot-dx"></span>Destro
-            </span>
-            <span class="sensor-badge" id="badge-dx">--</span>
-        </div>
-        <p class="sensor-meta" id="sensor-ts">in attesa...</p>
-    </div>
+<!-- ── Header ── -->
+<header class="header">
+  <div class="header-title">Alpha<span>Bot</span> Control</div>
+  <div class="status-pill">
+    <span class="status-dot"></span>
+    <span id="conn-label">LIVE</span>
+  </div>
+</header>
 
-    <!-- Parcheggio -->
-    <div class="parking-panel">
-        <p class="parking-title">Parcheggi disponibili</p>
+<!-- ── Camera ── -->
+<div class="camera-card">
+  <img id="cam-img" src="" alt="Camera stream">
+  <div class="camera-overlay rec" id="cam-label">CAM · LIVE</div>
+</div>
 
-        <div class="parking-counter-row">
-            <span class="parking-number normal" id="parking-count">100</span>
-            <div class="parking-label-col">
-                <span class="parking-total">su 100 posti</span>
-                <span class="parking-status-badge status-ok" id="parking-status">Libero</span>
-            </div>
-        </div>
+<!-- ── Sensori ── -->
+<div class="sensor-card">
+  <p class="card-label">Sensori IR</p>
+  <div class="sensor-row">
+    <span class="sensor-name">
+      <span class="ir-dot" id="dot-sx"></span>Sinistro
+    </span>
+    <span class="sensor-val" id="val-sx">--</span>
+  </div>
+  <div class="sensor-row">
+    <span class="sensor-name">
+      <span class="ir-dot" id="dot-dx"></span>Destro
+    </span>
+    <span class="sensor-val" id="val-dx">--</span>
+  </div>
+  <p class="sensor-ts" id="sensor-ts">in attesa…</p>
+</div>
 
-        <div class="parking-bar-bg">
-            <div class="parking-bar-fill" id="parking-bar" style="width:100%; background:#4caf50;"></div>
-        </div>
+<!-- ── Controller ── -->
+<div class="controller-card">
+  <p class="card-label" style="align-self:flex-start">Motori</p>
 
-        <div class="parking-log" id="parking-log"></div>
+  <div class="dpad">
+    <button class="dpad-btn btn-fwd" data-cmd="FORWARD">▲</button>
+    <button class="dpad-btn btn-lft" data-cmd="LEFT">◀</button>
+    <button class="dpad-btn btn-stp" data-cmd="STOP">■</button>
+    <button class="dpad-btn btn-rgt" data-cmd="RIGHT">▶</button>
+    <button class="dpad-btn btn-bwd" data-cmd="BACKWARD">▼</button>
+  </div>
 
-        <button class="parking-reset-btn" id="parking-reset">↺ Reset contatore</button>
-    </div>
+  <div class="speed-row">
+    <span>VEL</span>
+    <input type="range" id="speed-slider" min="20" max="100" value="50">
+    <span id="speed-val">50</span>
+  </div>
 
-    <script>
-        /* ── Controllo motori ── */
-        function sendCmd(cmd) {
-            fetch('/cmd', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cmd: cmd })
-            });
-        }
+  <div class="figures-row">
+    <button class="fig-btn" data-cmd="CERCHIO">⟳ Cerchio</button>
+    <button class="fig-btn" data-cmd="QUADRATO">□ Quadrato</button>
+    <button class="fig-btn" data-cmd="TRIANGOLO">△ Triangolo</button>
+  </div>
+</div>
 
-        document.querySelectorAll('.btn[data-cmd]').forEach(btn => {
-            const cmd = btn.dataset.cmd;
-            btn.addEventListener('mousedown',  () => { cmd === 'STOP_MANUAL' ? sendCmd('STOP') : sendCmd('START_' + cmd); });
-            btn.addEventListener('mouseup',    () => { if (cmd !== 'STOP_MANUAL') sendCmd('STOP'); });
-            btn.addEventListener('mouseleave', () => { if (cmd !== 'STOP_MANUAL') sendCmd('STOP'); });
-            btn.addEventListener('touchstart', e => { e.preventDefault(); cmd === 'STOP_MANUAL' ? sendCmd('STOP') : sendCmd('START_' + cmd); });
-            btn.addEventListener('touchend',   e => { e.preventDefault(); if (cmd !== 'STOP_MANUAL') sendCmd('STOP'); });
-        });
+<!-- ── Log ── -->
+<div class="log-card" id="log"></div>
 
-        /* ── Parcheggio ── */
-        const TOTAL = 100;
-        let parkingCount = TOTAL;
+<script>
+// ── Configurazione ─────────────────────────────────────────────────────────
+// Sostituisci con l'IP del Raspberry Pi sulla rete locale
+// (ThingsBoard custom widget gira nel browser dell'operatore)
+const ROBOT_BASE = "http://RASPBERRY_PI_IP:5000";
 
-        /* stati precedenti dei sensori (null = non ancora letto) */
-        let prevSx = null;
-        let prevDx = null;
+// ── Camera stream ──────────────────────────────────────────────────────────
+document.getElementById("cam-img").src = `${ROBOT_BASE}/video_feed`;
 
-        function addLog(type, count) {
-            const log = document.getElementById('parking-log');
-            const now = new Date().toLocaleTimeString('it-IT');
-            const entry = document.createElement('div');
-            entry.className = 'parking-log-entry';
-            entry.innerHTML = type === 'enter'
-                ? `<span class="log-time">${now}</span><span class="log-enter">▼ Entrata — rimasti ${count}</span>`
-                : `<span class="log-time">${now}</span><span class="log-exit">▲ Uscita — rimasti ${count}</span>`;
-            log.prepend(entry);
-            /* mantieni max 10 voci */
-            while (log.children.length > 10) log.removeChild(log.lastChild);
-        }
+// ── Log ────────────────────────────────────────────────────────────────────
+function addLog(text, cls = "log-cmd") {
+  const log = document.getElementById("log");
+  const now = new Date().toLocaleTimeString("it-IT");
+  const el  = document.createElement("div");
+  el.className = "log-entry";
+  el.innerHTML = `<span class="log-time">${now}</span><span class="${cls}">${text}</span>`;
+  log.prepend(el);
+  while (log.children.length > 20) log.removeChild(log.lastChild);
+}
 
-        function updateParkingUI() {
-            const count = parkingCount;
-            const pct   = (count / TOTAL) * 100;
+// ── Invio comandi via HTTP ─────────────────────────────────────────────────
+const speedSlider = document.getElementById("speed-slider");
+const speedVal    = document.getElementById("speed-val");
+speedSlider.addEventListener("input", () => {
+  speedVal.textContent = speedSlider.value;
+});
 
-            /* numero */
-            const numEl = document.getElementById('parking-count');
-            numEl.textContent = count;
-            numEl.className = 'parking-number ' + (count === 0 ? 'full' : count <= 10 ? 'low' : 'normal');
+async function sendCmd(cmd) {
+  const speed = parseInt(speedSlider.value);
+  try {
+    const res = await fetch(`${ROBOT_BASE}/cmd`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cmd, speed }),
+    });
+    const data = await res.json();
+    addLog(`CMD → ${cmd}  spd=${speed}  [${data.status}]`, "log-cmd");
+  } catch (e) {
+    addLog(`ERRORE: ${e.message}`, "log-err");
+  }
+}
 
-            /* barra */
-            const bar = document.getElementById('parking-bar');
-            bar.style.width = pct + '%';
-            bar.style.background = count === 0 ? '#e74c3c' : count <= 10 ? '#f39c12' : '#4caf50';
+// D-pad
+document.querySelectorAll(".dpad-btn").forEach(btn => {
+  const cmd = btn.dataset.cmd;
+  const isStop = cmd === "STOP";
 
-            /* badge stato */
-            const sb = document.getElementById('parking-status');
-            if (count === 0) { sb.textContent = 'Completo'; sb.className = 'parking-status-badge status-full'; }
-            else if (count <= 10) { sb.textContent = 'Quasi pieno'; sb.className = 'parking-status-badge status-low'; }
-            else { sb.textContent = 'Libero'; sb.className = 'parking-status-badge status-ok'; }
-        }
+  btn.addEventListener("mousedown",  () => sendCmd(isStop ? "STOP" : "START_" + cmd[0]));
+  btn.addEventListener("mouseup",    () => { if (!isStop) sendCmd("STOP"); });
+  btn.addEventListener("mouseleave", () => { if (!isStop) sendCmd("STOP"); });
+  btn.addEventListener("touchstart", e  => { e.preventDefault(); sendCmd(isStop ? "STOP" : "START_" + cmd[0]); });
+  btn.addEventListener("touchend",   e  => { e.preventDefault(); if (!isStop) sendCmd("STOP"); });
+});
 
-        /* ── Polling sensori ── */
-        function setBadge(id, dotId, value) {
-            const on = Boolean(value);
-            document.getElementById(dotId).className = 'sensor-dot ' + (on ? 'dot-on' : 'dot-off');
-            const badge = document.getElementById(id);
-            badge.className = 'sensor-badge ' + (on ? 'badge-on' : 'badge-off');
-            badge.textContent = on ? 'ON' : 'OFF';
-        }
+// Figure
+document.querySelectorAll(".fig-btn").forEach(btn => {
+  btn.addEventListener("click", () => sendCmd(btn.dataset.cmd));
+});
 
-        async function pollSensori() {
-            try {
-                const res  = await fetch('/api/sensori');
-                const data = await res.json();
+// ── Polling sensori ────────────────────────────────────────────────────────
+function setSensor(id, dotId, val) {
+  const on = Boolean(val);
+  document.getElementById(dotId).className = "ir-dot" + (on ? " active" : "");
+  const el = document.getElementById(id);
+  el.className = "sensor-val" + (on ? " on" : "");
+  el.textContent = on ? "ON" : "OFF";
+}
 
-                const curSx = Boolean(data.sensore_sinistro);
-                const curDx = Boolean(data.sensore_destro);
+async function pollSensors() {
+  try {
+    const res  = await fetch(`${ROBOT_BASE}/api/sensori`);
+    const data = await res.json();
+    setSensor("val-sx", "dot-sx", data.sensore_sinistro);
+    setSensor("val-dx", "dot-dx", data.sensore_destro);
+    document.getElementById("sensor-ts").textContent =
+      "aggiornato " + new Date().toLocaleTimeString("it-IT");
+  } catch {
+    document.getElementById("sensor-ts").textContent = "errore lettura sensori";
+  }
+}
 
-                /* rileva fronti di salita (OFF → ON) */
-                if (prevSx === false && curSx === true) {
-                    /* sensore SINISTRO attivato → uscita → posto liberato */
-                    parkingCount = Math.min(TOTAL, parkingCount + 1);
-                    addLog('exit', parkingCount);
-                    updateParkingUI();
-                }
-                if (prevDx === false && curDx === true) {
-                    /* sensore DESTRO attivato → entrata → posto occupato */
-                    parkingCount = Math.max(0, parkingCount - 1);
-                    addLog('enter', parkingCount);
-                    updateParkingUI();
-                }
+pollSensors();
+setInterval(pollSensors, 500);
 
-                prevSx = curSx;
-                prevDx = curDx;
-
-                setBadge('badge-sx', 'dot-sx', curSx);
-                setBadge('badge-dx', 'dot-dx', curDx);
-                document.getElementById('sensor-ts').textContent =
-                    'aggiornato alle ' + new Date().toLocaleTimeString('it-IT');
-            } catch {
-                document.getElementById('sensor-ts').textContent = 'errore lettura sensori';
-            }
-        }
-
-        /* reset manuale */
-        document.getElementById('parking-reset').addEventListener('click', () => {
-            parkingCount = TOTAL;
-            prevSx = null;
-            prevDx = null;
-            document.getElementById('parking-log').innerHTML = '';
-            updateParkingUI();
-        });
-
-        updateParkingUI();
-        pollSensori();
-        setInterval(pollSensori, 500);
-    </script>
+addLog("Widget inizializzato", "log-rpc");
+</script>
 </body>
 </html>
